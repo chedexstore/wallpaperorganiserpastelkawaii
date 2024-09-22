@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, content-fit=cover">
+    <title>Text Input with Separators</title>
+    <style>
+       body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('https://firebasestorage.googleapis.com/v0/b/online-storage-314fb.appspot.com/o/desktop%20wallpaper%20background%20image%2Fpastel%20kawaii%2Fbackground.jpg?alt=media&token=d249b8e4-596e-4a65-908f-1b8fc14640c4') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
+}
+
+
+        .input-container {
+            z-index: 1;
+            position: absolute;
+            cursor: move;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .clock {
+            font-size: 90px; /* Larger font size */
+            color: white; /* White color */
+            margin-bottom: 10px;
+            position: absolute;
+            top: 10px; /* Positioning at the top */
+            left: 10px; /* Positioning at the left */
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            width: 300px;
+        }
+
+        select {
+            margin-bottom: 15px;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .submitted-text {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            width: 300px;
+            word-wrap: break-word;
+            background: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plus-sign, .delete {
+            margin-left: 5px;
+            cursor: pointer;
+            color: blue;
+            font-weight: bold;
+        }
+
+        .delete {
+            color: red;
+            font-size: 14px; /* Smaller font size for delete */
+        }
+.date {
+    font-size: 25px; /* Larger font size */
+    color: black; /* black color */
+    margin-bottom: 10px;
+    position: absolute;
+    top: 70px; /* Positioning below the clock */
+    left: 10px; /* Positioning at the left */
+}
+
+    </style>
+</head>
+<body>
+    <a href="#" class="overlay"></a>
+
+    <!-- Clock Element -->
+    <div class="clock" id="clock"></div>
+
+    <!-- Draggable Container for Input, Submitted Text, and Separator Selection -->
+    <div class="input-container" id="inputBox">
+        <div>
+            <select id="separatorSelect">
+                <option value="none">None</option>
+                <option value="dot">Dot</option>
+                <option value="numbering">Numbering</option>
+            </select>
+            <span class="plus-sign" id="addSeparator">+</span>
+        </div>
+        <input type="text" id="textInput" placeholder="Enter text here...">
+    </div>
+<!-- Date Element -->
+<div class="date" id="date"></div>
+
+    <script>
+ // Function to update the date
+    function updateDate() {
+        const now = new Date();
+        const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateString = now.toLocaleDateString('en-US', options);
+        document.getElementById('date').textContent = dateString;
+
+        // Save date to localStorage
+        localStorage.setItem('currentDate', dateString);
+    }
+
+    // Load date from localStorage
+    function loadDate() {
+        const savedDate = localStorage.getItem('currentDate');
+        if (savedDate) {
+            document.getElementById('date').textContent = savedDate;
+        }
+    }
+
+    // Update date immediately and every minute
+    updateDate();
+    loadDate(); // Load the date from local storage
+
+    // Make the date element draggable
+    makeDraggable(document.getElementById('date'));
+        // Function to update the clock
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'pm' : 'am'; // Change to lowercase
+            const hour12 = hours % 12 || 12; // Convert to 12-hour format
+            const minuteString = minutes < 10 ? '0' + minutes : minutes; // Add leading zero if needed
+            const timeString = `${hour12}:${minuteString} ${ampm}`;
+            document.getElementById('clock').textContent = timeString;
+
+            // Save time to localStorage
+            localStorage.setItem('clockTime', timeString);
+        }
+
+        // Load clock time from localStorage
+        function loadClock() {
+            const savedTime = localStorage.getItem('clockTime');
+            if (savedTime) {
+                document.getElementById('clock').textContent = savedTime;
+            }
+        }
+
+        // Update clock every minute
+        setInterval(updateClock, 60000);
+        updateClock(); // Initial call to display immediately
+        loadClock(); // Load the clock time from local storage
+
+        // Function to hide original input elements
+        function hideOriginalInput() {
+            document.getElementById('textInput').style.display = 'none';
+            document.getElementById('separatorSelect').style.display = 'none';
+            document.getElementById('addSeparator').style.display = 'none';
+        }
+
+        // Make an element draggable
+        function makeDraggable(element) {
+            let isDragging = false, startX, startY;
+
+            element.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startX = e.clientX - element.offsetLeft;
+                startY = e.clientY - element.offsetTop;
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging) {
+                    element.style.left = (e.clientX - startX) + 'px';
+                    element.style.top = (e.clientY - startY) + 'px';
+                    savePositions(); // Save positions on drag
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        // Function to save positions to localStorage
+      function savePositions() {
+    const inputBox = document.getElementById('inputBox');
+    const clock = document.getElementById('clock');
+    const date = document.getElementById('date'); // Get the date element
+
+    localStorage.setItem('inputBoxPosition', JSON.stringify({ left: inputBox.style.left, top: inputBox.style.top }));
+    localStorage.setItem('clockPosition', JSON.stringify({ left: clock.style.left, top: clock.style.top }));
+    localStorage.setItem('datePosition', JSON.stringify({ left: date.style.left, top: date.style.top })); // Save date position
+}
+
+
+        // Function to load positions from localStorage
+       function loadPositions() {
+    const inputBoxPosition = JSON.parse(localStorage.getItem('inputBoxPosition'));
+    const clockPosition = JSON.parse(localStorage.getItem('clockPosition'));
+    const datePosition = JSON.parse(localStorage.getItem('datePosition')); // Load date position
+
+    if (inputBoxPosition) {
+        const inputBox = document.getElementById('inputBox');
+        inputBox.style.left = inputBoxPosition.left || '0px';
+        inputBox.style.top = inputBoxPosition.top || '0px';
+    }
+
+    if (clockPosition) {
+        const clock = document.getElementById('clock');
+        clock.style.left = clockPosition.left || '10px';
+        clock.style.top = clockPosition.top || '10px';
+    }
+
+    if (datePosition) {
+        const date = document.getElementById('date');
+        date.style.left = datePosition.left || '10px';
+        date.style.top = datePosition.top || '70px'; // Default position
+    }
+}
+
+
+        // Handle input and display submitted text below
+        let textCounter = 1; // For numbering option
+        document.getElementById('textInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const inputContainer = document.getElementById('inputBox');
+                const inputValue = this.value.trim();
+                const separatorOption = document.getElementById('separatorSelect').value;
+
+                if (inputValue) {
+                    // Create a new div to display the submitted text
+                    const submittedText = document.createElement('div');
+                    submittedText.className = 'submitted-text';
+
+                    // Handle different separator options
+                    let separator = '';
+                    if (separatorOption === 'dot') {
+                        separator = '• ';
+                    } else if (separatorOption === 'numbering') {
+                        separator = textCounter + '. ';
+                        textCounter++;
+                    }
+
+                    // Display text with separator
+                    submittedText.textContent = separator + inputValue;
+
+                    // Create a delete button for each text
+                    const deleteButton = document.createElement('span');
+                    deleteButton.className = 'delete';
+                    deleteButton.textContent = 'x'; // Small x for delete
+                    deleteButton.onclick = function() {
+                        inputContainer.removeChild(submittedText);
+                        saveToLocalStorage();
+                    };
+
+                    submittedText.appendChild(deleteButton);
+                    inputContainer.insertBefore(submittedText, this);
+
+                    // Save submitted text to localStorage
+                    saveToLocalStorage();
+
+                    // Clear the input field for the next entry
+                    this.value = '';
+                }
+
+                e.preventDefault();  // Prevent default behavior
+            }
+        });
+
+        // Function to save submitted text to localStorage
+        function saveToLocalStorage() {
+            const submittedTexts = Array.from(document.querySelectorAll('.submitted-text')).map(text => text.textContent);
+            localStorage.setItem('submittedTexts', JSON.stringify(submittedTexts));
+        }
+
+        // Function to load submitted texts from localStorage
+        function loadSubmittedTexts() {
+            const savedTexts = JSON.parse(localStorage.getItem('submittedTexts')) || [];
+            savedTexts.forEach(item => {
+                createSubmittedTextElement(item);
+            });
+        }
+
+        // Function to create a submitted text element with delete functionality
+        function createSubmittedTextElement(item) {
+            const inputContainer = document.getElementById('inputBox');
+            const submittedText = document.createElement('div');
+            submittedText.className = 'submitted-text';
+            submittedText.textContent = item;
+
+            // Create a delete button for each text
+            const deleteButton = document.createElement('span');
+            deleteButton.className = 'delete';
+            deleteButton.textContent = 'x'; // Small x for delete
+            deleteButton.onclick = function() {
+                inputContainer.removeChild(submittedText);
+                saveToLocalStorage();
+            };
+
+            submittedText.appendChild(deleteButton);
+            inputContainer.insertBefore(submittedText, document.getElementById('textInput'));
+        }
+
+        // Function to add a new input box with identical functionality
+        function addNewInputBox() {
+            const newInputContainer = document.createElement('div');
+            newInputContainer.className = 'input-container';
+
+            // Position the new input box near the original
+            const originalBox = document.getElementById('inputBox');
+            newInputContainer.style.left = (originalBox.offsetLeft) + 'px';
+            newInputContainer.style.top = (originalBox.offsetTop + originalBox.offsetHeight + 10) + 'px';
+
+            const newSelect = document.createElement('select');
+            newSelect.innerHTML = `
+                <option value="none">None</option>
+                <option value="dot">Dot</option>
+                <option value="numbering">Numbering</option>
+            `;
+
+            const newInput = document.createElement('input');
+            newInput.type = 'text';
+            newInput.placeholder = 'Enter text here...';
+
+            newInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const inputValue = this.value.trim();
+                    const separatorOption = newSelect.value;
+
+                    if (inputValue) {
+                        const submittedText = document.createElement('div');
+                        submittedText.className = 'submitted-text';
+                        let separator = '';
+
+                        if (separatorOption === 'dot') {
+                            separator = '• ';
+                        } else if (separatorOption === 'numbering') {
+                            separator = textCounter + '. ';
+                            textCounter++;
+                        }
+
+                        submittedText.textContent = separator + inputValue;
+
+                        // Create a delete button for each text
+                        const deleteButton = document.createElement('span');
+                        deleteButton.className = 'delete';
+                        deleteButton.textContent = 'x'; // Small x for delete
+                        deleteButton.onclick = function() {
+                            newInputContainer.removeChild(submittedText);
+                            saveToLocalStorage();
+                        };
+
+                        submittedText.appendChild(deleteButton);
+                        newInputContainer.insertBefore(submittedText, this);
+
+                        // Save submitted text to localStorage
+                        saveToLocalStorage();
+
+                        this.value = '';
+                    }
+
+                    e.preventDefault();
+                }
+            });
+
+            const plusSign = document.createElement('span');
+            plusSign.className = 'plus-sign';
+            plusSign.textContent = '+';
+            plusSign.onclick = addNewInputBox;
+
+            newInputContainer.appendChild(newSelect);
+            newInputContainer.appendChild(newInput);
+            newInputContainer.appendChild(plusSign);
+            document.body.appendChild(newInputContainer);
+            makeDraggable(newInputContainer);  // Make the new input box draggable
+
+            // Hide original input elements after adding a new input box
+            hideOriginalInput();
+        }
+
+        // Add event listener for the plus sign
+        document.getElementById('addSeparator').addEventListener('click', function() {
+            addNewInputBox();
+        });
+
+        // Load submitted texts on page load
+        loadSubmittedTexts();
+        // Make the initial input box and clock draggable
+        makeDraggable(document.getElementById('inputBox'));
+        makeDraggable(document.getElementById('clock'));
+        // Load positions on page load
+        loadPositions();
+    </script>
+</body>
+</html>
